@@ -22,13 +22,6 @@ if 'analyze_airbnp_data' not in st.session_state:
     st.session_state.analyze_airbnp_data = None
 
 
-if 'show_data_descriptive_view' not in st.session_state:
-    st.session_state.show_data_descriptive_view = False
-
-if 'show_data_analysis_view' not in st.session_state:
-    st.session_state.show_data_analysis_view = False
-
-
 room_type = None
 property_type = None
 
@@ -44,9 +37,10 @@ def show_home_screen():
         with col2:
             st.write("")
             st.write("")
-            if st.button(label="Delete Data", 
-                    type="primary"):
-                delete_stored_data(csv_file)
+            if os.path.exists(csv_file) == True:
+                if st.button(label="Delete Data", 
+                        type="primary"):
+                    delete_stored_data(csv_file)
         
         st.write("")
         st.write("")
@@ -80,30 +74,29 @@ pass
 
 
 def show_descriptive_data_view(data_field):
-    if(st.session_state.show_data_descriptive_view):
-        c1,c2 = st.columns([2, 4])
-        with c1:
-            determine_data = st.session_state.analyze_airbnp_data[data_field].describe()
-            st.write("Descriptive Statistics")
-            st.write(determine_data)
-        with c2:
-            st.write("Data  Distribution")
+    
+    c1,c2 = st.columns([2, 4])
+    with c1:
+        determine_data = st.session_state.analyze_airbnp_data[data_field].describe()
+        st.write("Descriptive Statistics")
+        st.write(determine_data)
+    with c2:
+        st.write("Data  Distribution")
 
-            fig = px.histogram(st.session_state.analyze_airbnp_data[f'{data_field}'], nbins=20)
-            fig.update_layout(
-                plot_bgcolor='#0E1117',
-                paper_bgcolor='#0E1117',
-                xaxis_title_font=dict(color='#0DF0D4'),
-                yaxis_title_font=dict(color='#0DF0D4')
-            )
-            fig.update_traces(hoverlabel=dict(bgcolor="#0E1117"),
-                                hoverlabel_font_color="#0DF0D4")
-            fig.update_xaxes(title_text="Availability Types")
-            fig.update_yaxes(title_text="Days  Count")
-            fig.update_traces(marker_color='#1BD4BD')
-            st.plotly_chart(fig, theme=None, use_container_width=True)
-    else:
-        st.write("Nothing selected")
+        fig = px.histogram(st.session_state.analyze_airbnp_data[f'{data_field}'], nbins=20)
+        fig.update_layout(
+            plot_bgcolor='#0E1117',
+            paper_bgcolor='#0E1117',
+            xaxis_title_font=dict(color='#0DF0D4'),
+            yaxis_title_font=dict(color='#0DF0D4')
+        )
+        fig.update_traces(hoverlabel=dict(bgcolor="#0E1117"),
+                            hoverlabel_font_color="#0DF0D4")
+        fig.update_xaxes(title_text="Availability Types")
+        fig.update_yaxes(title_text="Days  Count")
+        fig.update_traces(marker_color='#1BD4BD')
+        st.plotly_chart(fig, theme=None, use_container_width=True)
+
 
             
 
@@ -163,39 +156,31 @@ def show_data_visualzation_screen():
                     
             
         if(data_field != "Not selected"):
-            with st.container(border=True):
+
+
+            parent1 = st
+            if(st.session_state.analysis_data_type != None):
+                descrtiptive, analysis = st.tabs(["Descriptive Statistics & Data  Distribution", f"{st.session_state.analysis_data_type} Data Analysis"])
+                parent1 = descrtiptive
+
+            with parent1.container(border=True):
                 c1, c2 = st.columns([17, 2])
                 c1.markdown( f"<h2 style='font-size: 30px;'><span style='color: cyan;'>Descriptive Statistics</span> <span style='color: white;'> & </span><span style='color: cyan;'> Data  Distribution</span></h2>",unsafe_allow_html=True)
-                
                 c2.write("")
-                if st.session_state.show_data_descriptive_view == False:
-                    if c2.button(label="Hide", key="descriptive1", type="primary"):
-                        st.session_state.show_data_descriptive_view = False
-                        show_descriptive_data_view(data_field)
-  
-                else:
-                    if c2.button(label="Show", key="descriptive2", type="primary"):
-                        st.session_state.show_data_descriptive_view = True
-                        show_descriptive_data_view(data_field)
+                show_descriptive_data_view(data_field)
+ 
 
+                
 
-        
+            ## Data analysis
             if st.session_state.analysis_data_type != None:
-                with st.container(border=True):
+                with analysis.container(border=True):
                     c1, c2 = st.columns([17, 2])
                     c1.markdown( f"<h2 style='font-size: 30px;'><span style='color: cyan;'> {st.session_state.analysis_data_type}</span> <span style='color: white;'>Data Analysis</span></h2>",unsafe_allow_html=True)
                     
                     c2.write("")
-                    if st.session_state.show_data_analysis_view == True:
-                        if c2.button(label="Hide", key="analysis1", type="primary"):
-                            st.session_state.show_data_analysis_view = False
+                    show_data_analysis(st.session_state.analysis_data_type)
 
-                    else:
-                        if c2.button(label="Show", key="analysis2", type="primary"):
-                            st.session_state.show_data_analysis_view = True
-                    
-                    if(st.session_state.show_data_analysis_view == False):
-                        show_data_analysis(st.session_state.analysis_data_type)
 
 
                 
@@ -468,8 +453,8 @@ def show_availability_analysis():
     
 
 def show_powerbi_page():
-    st.title("PowerBi Data Evaluation", type="primary")
-    if st.button("Open PowerBi Dashboard"):
+    st.title("PowerBi Data Evaluation")
+    if st.button("Open PowerBi Dashboard", type="primary"):
         url= 'https://app.powerbi.com/groups/me/reports/f19c50ea-6e0e-42cc-a0b7-a87f1af11294/a04dfc4748479f39a448?experience=power-bi'  
         # Open the URL using open() function of module  
         webbrowser.open_new_tab(url)  
