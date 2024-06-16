@@ -31,7 +31,7 @@ def show_home_screen():
         st.title ("AIRBNB ANALYSIS")
         show_upload_file_option()
     else:
-        col1, col2 = st.columns([2,1])
+        col1, col2 = st.columns([22,4])
         with col1:
             st.title ("AIRBNB ANALYSIS")
         with col2:
