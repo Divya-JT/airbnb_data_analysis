@@ -34,9 +34,9 @@ def create_database_and_table():
     cursor = client.cursor()
     
     # Create "Airbnb" main TABLE 
-    query = """create table IF NOT EXISTS Airbnb(Id varchar(225) PRIMARY KEY, Name text , Description text, Neighborhood text, Property_type varchar(225), Room_type varchar(225),
+    query = """create table IF NOT EXISTS Airbnb(Id varchar(225) PRIMARY KEY, Name text , Description text, Neighborhood_overview text, Property_type varchar(225), Room_type varchar(225),
             Min_night int, Max_night int, Accommodates int, Bedrooms int, Beds int, Num_of_reviews bigint,
-            Bathrooms int, Price bigint , Host_Id varchar(225), Host_name varchar(225), lat varchar(225),
+            Bathrooms int, Price bigint , Host_Id varchar(225), Host_name varchar(225), host_total_listings_count bigint,host_neighborhood text, lat varchar(225),
             lon varchar(225), Availability_30 int, Availability_60 int, Availability_90 int,
             Availability_365 int, review_scores_rating int, review_scores_value int, review_scores_communication int,
             review_scores_checkin int, review_scores_cleanliness int, review_scores_accuracy int)"""
@@ -77,22 +77,22 @@ def insert_data_from_file(data):
     cursor = client.cursor()
 
 
-    columns = ["Id", "Name", "Description", "Neighborhood", "Property_type", "Room_type",
+    columns = ["Id", "Name", "Description", "Neighborhood_overview", "Property_type", "Room_type",
             "Min_night", "Max_night", "Accommodates", "Bedrooms", "Beds", "Num_of_reviews",
-            "Bathrooms", "Price" , "Host_Id", "Host_name", "lat",
+            "Bathrooms", "Price" , "Host_Id", "Host_name", "host_total_listings_count", "host_neighborhood", "lat",
             "lon", "Availability_30", "Availability_60", "Availability_90",
             "Availability_365", "review_scores_rating", "review_scores_value", "review_scores_communication",
             "review_scores_checkin", "review_scores_cleanliness", "review_scores_accuracy", "Amenities"]
 
     data_frame_list = []
     main_values=[]
-    main_query = """INSERT INTO Airbnb(Id, Name, Description, Neighborhood, Property_type, Room_type,
+    main_query = """INSERT INTO Airbnb(Id, Name, Description, Neighborhood_overview, Property_type, Room_type,
             Min_night, Max_night, Accommodates, Bedrooms, Beds, Num_of_reviews,
-            Bathrooms, Price , Host_Id, Host_name, lat,
+            Bathrooms, Price , Host_Id, Host_name,host_total_listings_count, host_neighborhood, lat,
             lon, Availability_30, Availability_60, Availability_90,
             Availability_365, review_scores_rating, review_scores_value, review_scores_communication,
             review_scores_checkin, review_scores_cleanliness, review_scores_accuracy) 
-            VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+            VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
     
     amenities_query = "INSERT INTO room_amenities(ab_Id, Amenities) VALUES(%s, %s)"
     review_query = "INSERT INTO room_reviews(ab_Id, review_id, Reviewer_Id, Rewiewer_name, comments) VALUES(%s, %s, %s, %s, %s)"
@@ -129,6 +129,8 @@ def insert_data_from_file(data):
             i ["price"],
             i ["host"] ["host_id"],
             i ["host"] ["host_name"],
+            i ["host"] ["host_total_listings_count"],
+            i ["host"] ["host_neighbourhood"],
             i ["address"] ["location"] ["coordinates"][0],
             i ["address"] ["location"] ["coordinates"][1],
             i ["availability"] ["availability_30"],
@@ -197,7 +199,7 @@ def save_json_data_into_csv(data_frame:pd.DataFrame):
     if(os.path.exists(csv_file)):
         os.remove(csv_file)
     
-    csv_data = data_frame.to_csv(csv_file, index=True)
+    csv_data = data_frame.to_csv(csv_file, index=False)
 
 pass
 
@@ -258,6 +260,21 @@ def check_data_available_in_sql():
 
 def read_csv_data():
     return pd.read_csv("airbnb_data.csv")
+
+def delete_stored_data(csv_file):
+    os.remove(csv_file)
+    client = use_sql_client()
+    cursor = client.cursor()
+    cursor.execute("delete from airbnb")
+    client.commit()
+    cursor.execute("delete from room_amenities")
+    client.commit()
+    cursor.execute("delete from room_reviews")
+    client.commit()
+    cursor.execute("delete from data_insertion_status")
+    client.commit()
+
+    client.close()
 
 csv_data_source = "CSV"
 sql_data_source = "SQL"
