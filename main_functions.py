@@ -2,8 +2,12 @@ import json
 import pandas as pd
 import mysql.connector
 import os
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
+import plotly.figure_factory as ff
 
-    
+
+# Create database in sql    
 def create_database():
     try:   
         client = mysql.connector.connect(
@@ -18,6 +22,7 @@ def create_database():
     except Exception as error:
         print("Create DB error ", error)
 
+
 # Sql Client with exist DB
 def use_sql_client():
     client = mysql.connector.connect(
@@ -27,6 +32,8 @@ def use_sql_client():
         database = "airbnb_data"
     )
     return client
+
+
 
 # create tables
 def create_database_and_table():
@@ -52,7 +59,7 @@ def create_database_and_table():
     cursor.execute(query)
 
     
-    # Create "room_reviews" TABLE 
+    # Create "data_insertion_status" TABLE 
     query = """create table IF NOT EXISTS data_insertion_status(status varchar(2))"""
     cursor.execute(query)
 
@@ -60,6 +67,7 @@ def create_database_and_table():
 
 
 
+# Two types of data
 categorical_data_list = ["Name", "Description", "Neighborhood", "Property_type", 
                          "Room_type", "Host_name"]
 
@@ -71,7 +79,8 @@ continuous_data_list = ["Id", "Min_night", "Max_night",
                         "review_scores_communication", "review_scores_checkin", "review_scores_cleanliness", 
                         "review_scores_accuracy"]
 
-# insert the loaded json data into DB
+
+# insert the loaded json data(values) into DB
 def insert_data_from_file(data):
     client = use_sql_client()
     cursor = client.cursor()
@@ -102,57 +111,47 @@ def insert_data_from_file(data):
 
     index = 0
     for  i in data:
-        name = check_null_value(data=i, key="name", is_int=False)
-        min_night = check_null_value(data=i, key="minimum_nights")
-        beds = check_null_value(data=i, key="beds")
-        bathrooms = check_null_value(data=i, key="bathrooms")
-        review_scores_rating = check_null_value(data=i["review_scores"], key="review_scores_rating")
-        review_scores_value = check_null_value(data=i["review_scores"], key="review_scores_value")
-        review_scores_communication = check_null_value(data=i["review_scores"], key="review_scores_communication")
-        review_scores_checkin = check_null_value(data=i["review_scores"], key="review_scores_checkin")
-        review_scores_cleanliness = check_null_value(data=i["review_scores"], key="review_scores_cleanliness")
-        review_scores_accuracy = check_null_value(data=i["review_scores"], key="review_scores_accuracy")
 
         row_data = (i ["_id"],
-            name,
-            i ["description"],
-            i ["neighborhood_overview"],
-            i ["property_type"],
-            i ["room_type"],
-            min_night, 
-            i ["maximum_nights"],
+            check_null_value(data=i, key="name", is_int=False),
+            check_null_value(data = i, key = "description", is_int=False),
+            check_null_value(data=i,key = "neighborhood_overview", is_int=False),
+            check_null_value(data=i, key = "property_type", is_int = False),
+            check_null_value(data=i, key = "room_type", is_int = False),
+            check_null_value(data=i, key="minimum_nights"), 
+            check_null_value(data=i, key = "maximum_nights"),
             check_null_value(data = i, key ="accommodates"), 
             check_null_value(data = i, key ="bedrooms"), 
-            beds, 
-            i ["number_of_reviews"], 
-            bathrooms,
-            i ["price"],
-            i ["host"] ["host_id"],
-            i ["host"] ["host_name"],
-            i ["host"] ["host_total_listings_count"],
-            i ["host"] ["host_neighbourhood"],
+            check_null_value(data=i, key="beds"), 
+            check_null_value(data=i,key = "number_of_reviews"), 
+            check_null_value(data=i, key="bathrooms"),
+            check_null_value(data=i,key = "price"),
+            check_null_value(data=i ["host"], key = "host_id"),
+            check_null_value(data=i ["host"], key = "host_name", is_int = False),
+            check_null_value(data=i ["host"] , key = "host_total_listings_count"),
+            check_null_value(data=i ["host"] , key = "host_neighbourhood", is_int = False),
             i ["address"] ["location"] ["coordinates"][0],
             i ["address"] ["location"] ["coordinates"][1],
-            i ["availability"] ["availability_30"],
-            i ["availability"] ["availability_60"],
-            i ["availability"] ["availability_90"],
-            i ["availability"] ["availability_365"],
-            review_scores_rating,
-            review_scores_value,
-            review_scores_communication,
-            review_scores_checkin,
-            review_scores_cleanliness,
-            review_scores_accuracy)
+            check_null_value(data=i ["availability"] , key = "availability_30"),
+            check_null_value(data=i ["availability"] , key = "availability_60"),
+            check_null_value(data=i ["availability"] , key = "availability_90"),
+            check_null_value(data=i ["availability"] , key = "availability_365"),
+            check_null_value(data=i["review_scores"], key="review_scores_rating"),
+            check_null_value(data=i["review_scores"], key="review_scores_value"),
+            check_null_value(data=i["review_scores"], key="review_scores_communication"),
+            check_null_value(data=i["review_scores"], key="review_scores_checkin"),
+            check_null_value(data=i["review_scores"], key="review_scores_cleanliness"),
+            check_null_value(data=i["review_scores"], key="review_scores_accuracy"))
         main_values.append(
             row_data
         )
 
 
-
+        # Appending data for csv
         row_data = row_data + ((','.join(i["amenities"])),)
         data_frame_list.append(row_data)
         
-
+        # Adding values to aminities and reviews table
         for amenity in i["amenities"]:
             amenities_values.append((i["_id"], amenity))
 
@@ -188,12 +187,6 @@ def insert_data_from_file(data):
     return df
 
 def save_json_data_into_csv(data_frame:pd.DataFrame):
-    # convert json to data frame
-    #df = pd.DataFrame.from_dict(data=pd.json_normalize(json_data), orient= "columns")
-
-    # cleanup and pre processsing
-    
-    
     # convert data frame to csv file
     csv_file = "airbnb_data.csv"
     if(os.path.exists(csv_file)):
@@ -201,26 +194,48 @@ def save_json_data_into_csv(data_frame:pd.DataFrame):
     
     csv_data = data_frame.to_csv(csv_file, index=False)
 
+
 pass
 
 
+## Data pre processing -
+# outliers and onehot encoding
+
+def read_csv_encoded_data():    
+    df = pd.read_csv("airbnb_data.csv")
+    df = pd.get_dummies(df,columns = ['Name', 'Description', 'host_neighborhood', 'Property_type', 
+                            'Room_type', 'Host_name'],dtype = 'int')
+    
+    return df
 
 
+def normalize_data(data):
+    mean = np.mean(data)
+    std = np.std(data)
+    #normalized_data = [(x - mean) / std for x in data]
+    normalized_data = (data-data.min()) / (data.max()-data.min())
+    return normalized_data
 
 
+ 
+# verify the values
+# if it's None OR Key not found, assign default data based on data type
 def check_null_value(data, key, is_int = True):
     default_value = 0
     if is_int == True: 
-        0 
+        default_value = 0               
     else: 
-        ""
-    
+        default_value = ""
+        
+
     if key in data:
         if data[key] is not None:
             default_value = data[key]
-        
+
     return default_value
 
+
+# To check data insertion
 def change_data_insertion_status(status):
     try:
         client = use_sql_client()
@@ -261,6 +276,8 @@ def check_data_available_in_sql():
 def read_csv_data():
     return pd.read_csv("airbnb_data.csv")
 
+
+# Delect stored data if we run it again
 def delete_stored_data(csv_file):
     os.remove(csv_file)
     client = use_sql_client()
@@ -276,6 +293,8 @@ def delete_stored_data(csv_file):
 
     client.close()
 
+
+# Choosing data source and data type for analysis
 csv_data_source = "CSV"
 sql_data_source = "SQL"
 categorical_data_type = "Categorical Data"
@@ -294,6 +313,7 @@ def get_fields_by_data_type(data_source, data_type):
             return continuous_data_list
         
 
+# Analysis of the data
 def analyze_data(data_source):
     if data_source == csv_data_source:
         return read_csv_data()

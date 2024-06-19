@@ -5,6 +5,10 @@ from streamlit_extras.stylable_container import stylable_container
 from main_functions import *
 import plotly.express as px
 import webbrowser  
+import seaborn as sns
+import matplotlib.pyplot as plt
+import plotly.express as px 
+
 
 
 
@@ -53,6 +57,7 @@ def show_home_screen():
 pass
                
                 
+# Upload file option
 
 def show_upload_file_option():
     uploaded_file = st.file_uploader("Drag & Drop or Select JSON file here to upload AirBnb data.", type=["json"])
@@ -80,6 +85,16 @@ def show_descriptive_data_view(data_field):
         determine_data = st.session_state.analyze_airbnp_data[data_field].describe()
         st.write("Descriptive Statistics")
         st.write(determine_data)
+
+        ## show Price outliers
+        #if st.session_state.analysis_data_type == "Price":
+            #normalized_data = normalize_data(st.session_state.analyze_airbnp_data[data_field])
+            #st.write(normalized_data)
+            #fig = px.box(normalized_data)
+            #st.plotly_chart(fig, theme=None, use_container_width=True)
+            #sns.boxplot(normalized_data)
+            #plt.show()
+
     with c2:
         st.write("Data  Distribution")
 
@@ -92,7 +107,7 @@ def show_descriptive_data_view(data_field):
         )
         fig.update_traces(hoverlabel=dict(bgcolor="#0E1117"),
                             hoverlabel_font_color="#0DF0D4")
-        fig.update_xaxes(title_text="Availability Types")
+        fig.update_xaxes(title_text=data_field)
         fig.update_yaxes(title_text="Days  Count")
         fig.update_traces(marker_color='#1BD4BD')
         st.plotly_chart(fig, theme=None, use_container_width=True)
@@ -170,7 +185,12 @@ def show_data_visualzation_screen():
                 show_descriptive_data_view(data_field)
  
 
-                
+            ## Display Outliers
+            #if st.session_state.analysis_data_type == "Price":
+                #with parent1.container(border = True):
+                    #sns.boxplot(st.session_state.analyze_airbnp_data['Price'])
+                    #plt.show()
+                                
 
             ## Data analysis
             if st.session_state.analysis_data_type != None:
@@ -391,10 +411,7 @@ def show_host_room_type_data(room_type):
             
 def show_host_neighborhood_data(neighbor_data):
     try:
-        if(isinstance(neighbor_data, str) == False):
-            neighbor_data = ""
-        elif(neighbor_data.strip() == "nan"):
-            neighbor_data = ""
+        
 
         st.markdown( f"<h1 style='font-size: 20px;'><span style='color: cyan;'> Top  10  Hosts </span><span style='color: white;'>  based on </span> <span style='color: green;'> Host Neighbourhood : {neighbor_data} </span></h1>",unsafe_allow_html=True)
 
