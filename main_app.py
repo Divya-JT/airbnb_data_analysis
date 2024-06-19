@@ -364,8 +364,6 @@ def show_room_type_data_analysis():
         st.plotly_chart(fig, theme=None, use_container_width=True)
 
             
-                
-
 
 def show_host_data_analysis():
     col1,col2 = st.columns([5,5])
@@ -373,7 +371,13 @@ def show_host_data_analysis():
 
     type = col1.selectbox('Choose Filter', ["Neighborhood", "Room type"])
     if(type == "Neighborhood"):
-        list = st.session_state.analyze_airbnp_data["host_neighborhood"].unique()
+        list = st.session_state.analyze_airbnp_data["host_neighborhood"].unique().tolist()
+        try:
+            print("0 index vslue : ", list[0])
+            list.remove(list[0])
+        except Exception as err:
+            pass
+
     elif(type == "Room type"):
         list = st.session_state.analyze_airbnp_data.Room_type.unique()
             
